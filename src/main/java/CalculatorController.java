@@ -1,4 +1,3 @@
-
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -17,11 +16,25 @@ public class CalculatorController {
 
             double sum = num1 + num2;
             double product = num1 * num2;
+            double subtract = num1 - num2;
 
-            resultLabel.setText("Sum: " + sum + ", Product: " + product);
+            // Division safety (avoid crash / Infinity in DB)
+            Double division = null;
+            if (num2 != 0) {
+                division = num1 / num2;
+            }
 
-            // Save to DB
-            ResultService.saveResult(num1, num2, sum, product);
+            String divisionText = (division == null) ? "undefined (÷0)" : String.valueOf(division);
+
+            resultLabel.setText(
+                    "Sum: " + sum +
+                            ", Product: " + product +
+                            ", Subtract: " + subtract +
+                            ", Division: " + divisionText
+            );
+
+            // Save to DB (store NULL for division when num2 == 0)
+            ResultService.saveResult(num1, num2, sum, product, subtract, division);
 
         } catch (NumberFormatException e) {
             resultLabel.setText("Please enter valid numbers!");

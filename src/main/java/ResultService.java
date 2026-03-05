@@ -6,7 +6,6 @@ public class ResultService {
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "Test12";
 
-    // Load MariaDB driver
     static {
         try {
             Class.forName("org.mariadb.jdbc.Driver");
@@ -17,7 +16,7 @@ public class ResultService {
 
     private static String getDatabaseHost() {
         String host = System.getenv("DB_HOST");
-        if (host == null || host.isEmpty()) host = "db"; // use Docker service name
+        if (host == null || host.isEmpty()) host = "db";
         return host;
     }
 
@@ -26,13 +25,17 @@ public class ResultService {
                 "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     }
 
-    public static void saveResult(double n1, double n2, double sum, double product) {
+    // NOTE: division is Double so it can be NULL
+    public static void saveResult(double n1, double n2,
+                                  double sum, double product,
+                                  double subtract, Double division) {
+
         String dbUrl = getDatabaseUrl();
 
         try (Connection conn = DriverManager.getConnection(dbUrl, DB_USER, DB_PASSWORD);
              Statement stmt = conn.createStatement()) {
 
-            // Create table if it doesn't exist
+            // Create table if it doesn't exist (now includes subtract + division)
             String createTable = """
                 CREATE TABLE IF NOT EXISTS calc_results (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -40,23 +43,41 @@ public class ResultService {
                     number2 DOUBLE NOT NULL,
                     sum_result DOUBLE NOT NULL,
                     product_result DOUBLE NOT NULL,
+                    subtract_result DOUBLE NOT NULL,
+                    division_result DOUBLE NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
                 """;
             stmt.executeUpdate(createTable);
 
-            // Insert the result
-            String insert = "INSERT INTO calc_results (number1, number2, sum_result, product_result) VALUES (?, ?, ?, ?)";
+            // Insert all results
+            String insert = """
+                INSERT INTO calc_results
+                (number1, number2, sum_result, product_result, subtract_result, division_result)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """;
+
             try (PreparedStatement ps = conn.prepareStatement(insert)) {
                 ps.setDouble(1, n1);
                 ps.setDouble(2, n2);
                 ps.setDouble(3, sum);
                 ps.setDouble(4, product);
+                ps.setDouble(5, subtract);
+
+                if (division == null) {
+                    ps.setNull(6, Types.DOUBLE);
+                } else {
+                    ps.setDouble(6, division);
+                }
+
                 ps.executeUpdate();
             }
 
-            System.out.println("✅ Result saved: " + n1 + ", " + n2 + " → Sum=" + sum + ", Product=" + product);
-
+            System.out.println("✅ Result saved: " + n1 + ", " + n2 +
+                    " → Sum=" + sum +
+                    ", Product=" + product +
+                    ", Subtract=" + subtract +
+                    ", Division=" + (division == null ? "NULL" : division));
 
         } catch (SQLException e) {
             System.err.println("❌ Failed to save result to DB: " + dbUrl);
