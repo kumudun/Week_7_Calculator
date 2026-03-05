@@ -6,6 +6,11 @@ pipeline {
         maven 'Maven 3'
     }
 
+    environment {
+        // Unique docker compose project name per build to avoid container name conflicts
+        COMPOSE_PROJECT_NAME = "week7_${env.BUILD_NUMBER}"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -27,12 +32,13 @@ pipeline {
 
         stage('Docker Compose Up') {
             steps {
-                bat 'docker compose up -d --build'
+                bat "docker compose -p %COMPOSE_PROJECT_NAME% up -d --build"
             }
         }
 
         stage('Containers Running') {
             steps {
+                bat "docker compose -p %COMPOSE_PROJECT_NAME% ps"
                 bat 'docker ps'
             }
         }
@@ -40,7 +46,8 @@ pipeline {
 
     post {
         always {
-            bat 'docker compose down'
+            // Bring down the SAME compose project we started
+            bat "docker compose -p %COMPOSE_PROJECT_NAME% down --remove-orphans"
         }
     }
 }
