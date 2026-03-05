@@ -4,7 +4,7 @@ public class ResultService {
 
     private static final String DB_NAME = "calc_data";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "Test12";
+    private static final String DB_PASSWORD = "root123";
 
     static {
         try {
@@ -73,7 +73,7 @@ public class ResultService {
                 ps.executeUpdate();
             }
 
-            System.out.println("✅ Result saved: " + n1 + ", " + n2 +
+            System.out.println("Result saved: " + n1 + ", " + n2 +
                     " → Sum=" + sum +
                     ", Product=" + product +
                     ", Subtract=" + subtract +
