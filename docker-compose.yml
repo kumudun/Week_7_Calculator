@@ -18,7 +18,7 @@ services:
 
   app:
     build: .
-    container_name: calculator-app
+
     depends_on:
       db:
         condition: service_healthy
